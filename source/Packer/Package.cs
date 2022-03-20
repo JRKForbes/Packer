@@ -24,6 +24,11 @@ namespace Packer
 
         #endregion
 
+        /// <summary>
+        /// Creates a new instance of a Package
+        /// Takes the raw input and extracts the necessary details about the package
+        /// </summary>
+        /// <param name="rawInput">raw data of the package</param>
         public Package(string rawInput)
         {
             _descComparer = Comparer<PackageItem>.Create((x, y) => y.Cost.CompareTo(x.Cost));
