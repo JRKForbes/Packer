@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Packer
 {
@@ -13,19 +14,25 @@ namespace Packer
 
         private string _rawInput;
 
-        private SortedList<decimal, PackageItem> _items;
+        private List<PackageItem> _items;
         private decimal _maxWeight;
 
-        private Comparer<decimal> _descComparer;
+        private Comparer<PackageItem> _descComparer;
+
+        private NumberStyles _numberStyles;
+        private CultureInfo _euros;
 
         #endregion
 
         public Package(string rawInput)
         {
-            _descComparer = Comparer<decimal>.Create((x, y) => y.CompareTo(x));
+            _descComparer = Comparer<PackageItem>.Create((x, y) => y.Cost.CompareTo(x.Cost));
 
             this._rawInput = rawInput;
-            _items = new SortedList<decimal, PackageItem>(_descComparer);
+            _items = new List<PackageItem>();
+
+            _numberStyles = NumberStyles.AllowCurrencySymbol | NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands;
+            _euros = CultureInfo.CreateSpecificCulture("es");
 
             ExtractDetails();
         }
@@ -46,8 +53,8 @@ namespace Packer
                 List<PackageItem> combo = new List<PackageItem>();
                 combo.Add(_items[step]);
 
-                decimal comboWeight = _items[step].weight;
-                decimal cost = _items[step].cost;
+                decimal comboWeight = _items[step].Weight;
+                decimal cost = _items[step].Cost;
 
                 int i = step + 1;
                 while (i < _items.Count)
@@ -55,7 +62,7 @@ namespace Packer
                     bool add = CheckNextItem(ref comboWeight, _items[i]);
                     if (add)
                     {
-                        cost += _items[i].cost;
+                        cost += _items[i].Cost;
                         combo.Add(_items[i]);
                     }
 
@@ -64,7 +71,7 @@ namespace Packer
 
                 step++;
 
-                string indices = String.Join(",", combo.Select(x => x.index).OrderBy(x => x).ToArray());
+                string indices = String.Join(",", combo.Select(x => x.Index).OrderBy(x => x).ToArray());
 
                 combos.Add(new Tuple<decimal, decimal, string>(cost, comboWeight, indices));
             }
@@ -101,25 +108,27 @@ namespace Packer
 
             foreach (var item in items)
             {
-                string[] i = item.Replace("\u20AC", "").Split(',');
+                string[] i = item.Split(',');
                 PackageItem pi = new PackageItem();
-                pi.index = Int32.Parse(i[0]);
-                pi.weight = Decimal.Parse(i[1]);
-                pi.cost = Decimal.Parse(i[2]);
+                pi.Index = Int32.Parse(i[0]);
+                pi.Weight = Decimal.Parse(i[1]);
+                pi.Cost = Decimal.Parse(i[2], _numberStyles, _euros);
 
-                if (pi.cost > 100 || pi.weight > 100)
+                if (pi.Cost > 100 || pi.Weight > 100)
                     throw new APIException("Items should not weigh or cost more than 100");
 
-                if (pi.weight <= _maxWeight)
-                    _items.Add(pi.cost, pi);
+                if (pi.Weight <= _maxWeight)
+                    _items.Add(pi);
             }
+
+            _items.Sort(_descComparer);
         }
 
         private bool CheckNextItem(ref decimal currentWeight, PackageItem item)
         {
-            if ((currentWeight + item.weight) <= _maxWeight)
+            if ((currentWeight + item.Weight) <= _maxWeight)
             {
-                currentWeight += item.weight;
+                currentWeight += item.Weight;
                 return true;
             }
             else

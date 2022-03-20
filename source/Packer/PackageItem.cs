@@ -8,8 +8,8 @@ namespace Packer
 {
     public class PackageItem
     {
-        public int index { get; set; }
-        public decimal weight { get; set; }
-        public decimal cost { get; set; }
+        public int Index { get; set; }
+        public decimal Weight { get; set; }
+        public decimal Cost { get; set; }
     }
 }

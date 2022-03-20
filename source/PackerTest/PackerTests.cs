@@ -6,12 +6,9 @@ namespace PackerTest
 {
     public class PackerTests
     {
-        private Packer.Packer _packer;
-
         [SetUp]
         public void Setup()
         {
-            _packer = new Packer.Packer();
         }
 
         [TestCase("Tests/all")]
@@ -27,7 +24,7 @@ namespace PackerTest
                 sb.AppendLine(line);
             }
 
-            string result = _packer.Pack($"{file}_input");
+            string result = Packer.Packer.Pack($"{file}_input");
             string expected = sb.ToString();
 
             Assert.AreEqual(expected, result); 
